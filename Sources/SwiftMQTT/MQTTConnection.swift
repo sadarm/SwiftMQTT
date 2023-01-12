@@ -16,24 +16,20 @@ public enum MQTTConnectionState {
     case cancelled
 }
 
-public enum SwiftMQTTError: Error {
-    case incorrentBytes
-}
-
 public protocol MQTTConnection {
     
-    var host: String { get set }
-    var port: UInt16 { get set }
+    var host: String { get }
+    var port: UInt16 { get }
     var clientID: String { get }
-    var username: String? { get set }
-    var password: String? { get set }
-    var cleanSession: Bool { get set }
-    var keepAlive: UInt16 { get set }
+    var username: String? { get }
+    var password: String? { get }
+    var cleanSession: Bool { get }
+    var keepAlive: UInt16 { get }
     
     func start()
     func stop()
     
-    func subscribeTopics(_ topics: [String])
-    func unsubscribeTopics(_ topics: [String])
+    func subscribeTopics(_ topics: [(String, MQTT3QoS)])
+    func unsubscribeTopics(_ topics: [String])å
     
 }
