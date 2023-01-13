@@ -23,28 +23,55 @@ struct MQTT3PublishPacket: MQTT3ControlPacket {
         }
     }
     
+    enum QoSWithIdentifier {
+        case qos0
+        case qos1(UInt16)
+        case qos2(UInt16)
+        
+        var qos: MQTT3QoS {
+            switch self {
+            case .qos0:
+                return .qos0
+            case .qos1:
+                return .qos1
+            case .qos2:
+                return .qos2
+            }
+        }
+        
+    }
+    
     var typeAndFlags: MQTT3ControlPacketTypeAndFlags {
-        MQTT3ControlPacketTypeAndFlags(type: .publish, flags: self.dupFlag.byte << 3 | self.message.qos.rawValue << 1 | self.message.retain.byte)
+        MQTT3ControlPacketTypeAndFlags(type: .publish, flags: self.dupFlag.byte << 3 | self.qosWithIdentifier.qos.rawValue << 1 | self.retain.byte)
     }
 
     var dupFlag: Bool
-    var identifier: UInt16?
-    var message: MQTT3Message
+    let qosWithIdentifier: QoSWithIdentifier
+    let topic: MQTT3String
+    let message: MQTT3String
+    let retain: Bool
     
     func variableHeader() -> [UInt8] {
         var header: [UInt8] = []
-        header.append(self.message.topic)
-        
-        if self.message.qos > .qos0,
-           let id = self.identifier {
-            header.append(id)
+        header.append(self.topic)
+
+        switch self.qosWithIdentifier {
+        case .qos0:
+            break
+        case .qos1(let identifier):
+            header.append(identifier)
+        case .qos2(let identifier):
+            header.append(identifier)
         }
         
         return header
     }
     
     func payload() -> [UInt8] {
-        return self.message.payload.bytesMQTTEncoded
+        var bytes: [UInt8] = []
+        bytes.append(self.topic)
+        bytes.append(self.message)
+        return bytes
     }
 }
 
