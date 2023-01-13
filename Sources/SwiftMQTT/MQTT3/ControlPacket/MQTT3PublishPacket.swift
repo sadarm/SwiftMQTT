@@ -91,38 +91,40 @@ extension MQTT3PublishPacket {
             throw SwiftMQTTError.notEnoughData
         }
         
-        let lengthOfTopic = Int(UInt16(data[0] << 8) | UInt16(data[1]))
-        data = data[2..<data.endIndex]
+        let lengthOfTopic = Int(UInt16(data[data.startIndex] << 8) | UInt16(data[data.startIndex+1]))
+        data = data[data.startIndex+2..<data.endIndex]
         
         guard data.count >= lengthOfTopic else {
             throw SwiftMQTTError.notEnoughData
         }
         
-        let topic = try MQTT3String(data[0..<lengthOfTopic])
-        data = data[lengthOfTopic..<data.endIndex]
+        let topic = try MQTT3String(data[data.startIndex..<data.startIndex+lengthOfTopic])
+        data = data[data.startIndex+lengthOfTopic..<data.endIndex]
         
         guard data.count >= 2 else {
             throw SwiftMQTTError.notEnoughData
         }
         
-        var identifier: UInt16?
-        if flags.qos > .qos0 {
-            identifier = (UInt16(data[0]) << 8) | UInt16(data[1])
-            data = data[2..<data.endIndex]
+        let qosWithIdentifier: QoSWithIdentifier
+        switch flags.qos {
+        case .qos0:
+            qosWithIdentifier = .qos0
+        case .qos1:
+            let identifier = (UInt16(data[data.startIndex]) << 8) | UInt16(data[data.startIndex+1])
+            data = data[data.startIndex+2..<data.endIndex]
+            qosWithIdentifier = .qos1(identifier)
+        case .qos2:
+            let identifier = (UInt16(data[data.startIndex]) << 8) | UInt16(data[data.startIndex+1])
+            data = data[data.startIndex+2..<data.endIndex]
+            qosWithIdentifier = .qos2(identifier)
         }
         
-        guard data.count >= 2 else {
-            throw SwiftMQTTError.notEnoughData
-        }
-        
-        let lengthOfPayload = (UInt16(data[0]) << 8) | UInt16(data[1])
-        data = data[2..<data.endIndex]
-        
-        let payload = try MQTT3String(data[0..<lengthOfPayload])
-        let message = MQTT3Message(qos: flags.qos, topic: topic, payload: payload, retain: flags.retain)
+        let message = try MQTT3String(data)
         
         self.init(dupFlag: flags.dupFlag,
-                  identifier: identifier,
-                  message: message)
+                  qosWithIdentifier: qosWithIdentifier,
+                  topic: topic,
+                  message: message,
+                  retain: flags.retain)
     }
 }

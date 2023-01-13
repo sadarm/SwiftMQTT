@@ -73,8 +73,8 @@ extension MQTT3SubscribeAckPacket {
         }
         
         var data = data
-        let identifier = UInt16(data[0] << 8) | UInt16(data[1])
-        data = data[2..<data.endIndex]
+        let identifier = UInt16(data[data.startIndex] << 8) | UInt16(data[data.startIndex+1])
+        data = data[data.startIndex..<data.endIndex]
         
         let returnCodes = data.compactMap { ReturnCode(rawValue: $0) }
         self.init(identifier: identifier, returnCodes: returnCodes)

@@ -55,8 +55,8 @@ extension MQTT3ConnectAckPacket {
             throw SwiftMQTTError.notEnoughData
         }
         
-        let acknowledgeFlags: Bool = data[0] & 0x01 == 0
-        let returnCode = ReturnCode(byte: data[1])
+        let acknowledgeFlags: Bool = Bool(byte: data[data.startIndex])
+        let returnCode = ReturnCode(byte: data[data.startIndex+1])
         self.init(acknowledgeFlags: acknowledgeFlags, returnCode: returnCode)
     }
 }

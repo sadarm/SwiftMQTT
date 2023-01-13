@@ -31,7 +31,7 @@ extension MQTT3UnsubscribeAckPacket {
             throw SwiftMQTTError.notEnoughData
         }
         
-        let identifier = UInt16(data[0] << 8) | UInt16(data[1])
+        let identifier = UInt16(data[data.startIndex] << 8) | UInt16(data[data.startIndex+1])
         self.init(identifier: identifier)
     }
 }

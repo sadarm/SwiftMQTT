@@ -34,16 +34,16 @@ extension MQTT3UnsubscribePacket {
         }
         
         var data = data
-        let identifier = UInt16(data[0] << 8) | UInt16(data[1])
-        data = data[2..<data.endIndex]
+        let identifier = UInt16(data[data.startIndex] << 8) | UInt16(data[data.startIndex+1])
+        data = data[data.startIndex+2..<data.endIndex]
         
         var topics: [MQTT3String] = []
         while !data.isEmpty {
             guard data.count >= 2 else {
                 throw SwiftMQTTError.corruptData
             }
-            let lengthOfTopic = Int(UInt16(data[0] << 8) | UInt16(data[1]))
-            data = data[2..<data.endIndex]
+            let lengthOfTopic = Int(UInt16(data[data.startIndex] << 8) | UInt16(data[data.startIndex+1]))
+            data = data[data.startIndex+2..<data.endIndex]
             guard data.count >= lengthOfTopic else {
                 throw SwiftMQTTError.corruptData
             }

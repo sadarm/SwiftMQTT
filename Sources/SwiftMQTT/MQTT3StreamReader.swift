@@ -156,21 +156,22 @@ struct MQTT3StreamDecoder {
     }
     
     private func _decode(with typeAndFlags: MQTT3ControlPacketTypeAndFlags, data: Data) throws -> DecodingResult {
-        let countOfData = data.count
-        
-        guard countOfData >= 2 else {
+        guard data.count >= 2 else {
             throw SwiftMQTTError.notEnoughData
         }
 
-        let remainingLength = Int(data[1])
-        
-        let content = data.subdata(in: (1..<remainingLength))
-        let leftData = data.subdata(in: (1+remainingLength..<data.endIndex))
+        var data: Data = data
+        let remainingLength = Int(data[data.startIndex+1])
+        data = data[data.startIndex+2..<data.endIndex]
+
+        let content = data[data.startIndex..<data.startIndex+remainingLength]
+        let leftData = data[data.startIndex+remainingLength..<data.endIndex]
         
         return try DecodingResult(leftData: leftData, packet: self.__decode(with: typeAndFlags, data: content))
     }
     
     private func __decode(with typeAndFlags: MQTT3ControlPacketTypeAndFlags, data: Data) throws -> _MQTT3ControlPacket {
+        print("received ControlPacketType \(typeAndFlags.type)")
         switch typeAndFlags.type {
         case .connect:
             throw SwiftMQTTError.unexpectedType

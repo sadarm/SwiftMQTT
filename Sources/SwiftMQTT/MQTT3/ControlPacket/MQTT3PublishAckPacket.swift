@@ -32,6 +32,6 @@ extension MQTT3PublishAckPacket {
             throw SwiftMQTTError.notEnoughData
         }
         
-        self.init(identifier: UInt16(data[0] << 8) | UInt16(data[1]))
+        self.init(identifier: UInt16(data[data.startIndex] << 8) | UInt16(data[data.startIndex+1]))
     }
 }
