@@ -30,7 +30,7 @@ struct MQTT3ConnectAckPacket: MQTT3ControlPacket {
     var typeAndFlags: MQTT3ControlPacketTypeAndFlags {
         MQTT3ControlPacketTypeAndFlags(type: .connack, flags: 0)
     }
-    var remainingLength: UInt8 { 2 }
+    var remainingLength: UInt32 { 2 }
     
     var acknowledgeFlags: Bool
     var returnCode: ReturnCode

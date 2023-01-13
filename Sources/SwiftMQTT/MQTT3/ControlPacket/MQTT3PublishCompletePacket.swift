@@ -9,7 +9,7 @@ import Foundation
 
 struct MQTT3PublishCompletePacket: MQTT3ControlPacket {
     var typeAndFlags: MQTT3ControlPacketTypeAndFlags { MQTT3ControlPacketTypeAndFlags(type: .pubcomp, flags: 0) }
-    var remainingLength: UInt8 { 2 }
+    var remainingLength: UInt32 { 2 }
     
     let identifier: UInt16
     

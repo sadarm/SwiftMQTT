@@ -10,7 +10,7 @@ import Foundation
 
 protocol MQTT3ControlPacket {
     var typeAndFlags: MQTT3ControlPacketTypeAndFlags { get }
-    var remainingLength: UInt8 { get }
+    var remainingLength: UInt32 { get }
     
     func fixedHeader() -> [UInt8]
     func variableHeader() -> [UInt8]
@@ -21,12 +21,29 @@ protocol MQTT3ControlPacket {
 extension MQTT3ControlPacket {
     var type: MQTT3ControlPacketType { self.typeAndFlags.type }
     
-    var remainingLength: UInt8 {
-        UInt8(self.variableHeader().count + self.payload().count)
+    var remainingLength: UInt32 {
+        return UInt32(self.variableHeader().count + self.payload().count)
+    }
+    
+    private func encodedRemainingLength() -> [UInt8] {
+        var length = self.remainingLength
+        var encodedByte: UInt8 = 0
+        var encodedBytes: [UInt8] = []
+        repeat {
+            encodedByte = UInt8(length % 128)
+            length = length / 128
+            
+            // if there are more data to encode, set the top bit of this byte
+            if length > 0 {
+                encodedByte = encodedByte | 128
+            }
+            encodedBytes.append(encodedByte)
+        } while length > 0
+        return encodedBytes
     }
 
     func fixedHeader() -> [UInt8] {
-        [self.typeAndFlags.rawValue, self.remainingLength]
+        [self.typeAndFlags.rawValue] + self.encodedRemainingLength()
     }
     
     func bytes() -> [UInt8] {
