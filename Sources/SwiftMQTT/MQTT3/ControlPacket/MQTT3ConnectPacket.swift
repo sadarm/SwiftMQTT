@@ -31,7 +31,7 @@ struct MQTT3ConnectPacket {
     var willMessage: MQTT3Message?
     var cleanSession: Bool = true
     
-    var clientID: String
+    var clientID: MQTT3String
     var keepAlive: UInt16
 }
 
@@ -83,6 +83,8 @@ extension MQTT3ConnectPacket: MQTT3ControlPacket {
     
     func payload() -> [UInt8] {
         var payload: [UInt8] = []
+        
+        payload.append(self.clientID)
         
         if let willMessage = self.willMessage {
             payload.append(willMessage)
