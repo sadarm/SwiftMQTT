@@ -26,10 +26,10 @@ public protocol MQTTConnection {
     var cleanSession: Bool { get }
     var keepAlive: UInt16 { get }
     
-    func start()
+    func start() async throws
     func stop()
     
-    func subscribeTopics(_ topics: [(String, MQTT3QoS)])
-    func unsubscribeTopics(_ topics: [String])å
+    func subscribeTopics(_ topics: [(String, MQTT3QoS)]) async throws
+    func unsubscribeTopics(_ topics: [String])
     
 }
