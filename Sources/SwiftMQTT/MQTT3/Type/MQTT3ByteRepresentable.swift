@@ -26,7 +26,7 @@ extension Bool {
     }
     
     init(byte: UInt8) {
-        self = (byte | 0x01) != 0
+        self = (byte & 0x01) != 0
     }
 }
 
