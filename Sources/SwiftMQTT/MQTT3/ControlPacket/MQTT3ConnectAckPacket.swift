@@ -13,7 +13,7 @@ struct MQTT3ConnectAckPacket: MQTT3ControlPacket {
         case unacceptableProtocolVersion
         case identifierRejected
         case serverUnavailable
-        case bandUserNameOrPassword
+        case badUserNameOrPassword
         case notAuthorized
         case reserved
         
