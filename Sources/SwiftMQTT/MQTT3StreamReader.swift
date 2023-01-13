@@ -20,9 +20,9 @@ enum _MQTT3ControlPacket {
     case pubrel(MQTT3PublishReleasePacket)
     case pubcomp(MQTT3PublishCompletePacket)
     case subscribe(MQTT3SubscribePacket)
-    case subacko(MQTT3SubscribeAckPacket)
+    case suback(MQTT3SubscribeAckPacket)
     case unsubscribe(MQTT3UnsubscribePacket)
-    case unsubact(MQTT3UnsubscribeAckPacket)
+    case unsuback(MQTT3UnsubscribeAckPacket)
     case pingreq(MQTT3PingRequestPacket)
     case pingresp(MQTT3PingResponsePacket)
     case disconnect(MQTT3DisconnectPacket)
@@ -189,17 +189,17 @@ struct MQTT3StreamDecoder {
         case .subscribe:
             return try .subscribe(.init(data))
         case .suback:
-            return try .pubrel(.init(data))
+            return try .suback(.init(data))
         case .unsubscribe:
-            return try .pubrel(.init(data))
+            return try .unsubscribe(.init(data))
         case .unsuback:
-            return try .pubrel(.init(data))
+            return try .unsuback(.init(data))
         case .pingreq:
-            return try .pubrel(.init(data))
+            return .pingreq(.init())
         case .pingresp:
-            return try .pubrel(.init(data))
+            return .pingresp(.init())
         case .disconnect:
-            return try .pubrel(.init(data))
+            return .disconnect(.init())
         case .reserved, .reserved2:
             throw SwiftMQTTError.incorrentBytes
         }
