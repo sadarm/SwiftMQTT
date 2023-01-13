@@ -11,7 +11,7 @@ struct MQTT3String: ExpressibleByStringLiteral, MQTT3BytesRepresentable {
     typealias StringLiteralType = String
 
     var bytesMQTTEncoded: [UInt8] {
-        return UInt16(self.rawString.count).bytesMQTTEncoded + self.rawString.utf8
+        return UInt16(self.rawString.utf8.count).bytesMQTTEncoded + self.rawString.utf8
     }
     
     let rawString: String
