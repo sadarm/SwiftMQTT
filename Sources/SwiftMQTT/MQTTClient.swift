@@ -18,6 +18,16 @@ public final class MQTT3Connection: MQTTConnection {
         public var password: String?
         public var cleanSession: Bool
         public var keepAlive: UInt16
+        
+        public init(host: String, port: UInt16, clientID: String, username: String? = nil, password: String? = nil, cleanSession: Bool, keepAlive: UInt16) {
+            self.host = host
+            self.port = port
+            self.clientID = clientID
+            self.username = username
+            self.password = password
+            self.cleanSession = cleanSession
+            self.keepAlive = keepAlive
+        }
     }
     
     private var cancellables: Set<AnyCancellable> = []
