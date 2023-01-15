@@ -15,7 +15,7 @@ struct MQTT3Message {
 }
 
 extension MQTT3Message: MQTT3BytesRepresentable {
-    var bytesMQTTEncoded: [UInt8] {
+    var bytesMQTT3Encoded: [UInt8] {
         var bytes: [UInt8] = []
         bytes.append(self.topic)
         bytes.append(self.payload)

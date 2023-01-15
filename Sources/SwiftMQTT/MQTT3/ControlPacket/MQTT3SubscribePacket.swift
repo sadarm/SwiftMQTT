@@ -29,17 +29,17 @@ struct MQTT3SubscribePacket: MQTT3ControlPacket {
     }
     
     func variableHeader() -> [UInt8] {
-        self.identifier.bytesMQTTEncoded
+        self.identifier.bytesMQTT3Encoded
     }
     
     func payload() -> [UInt8] {
-        return self.subscriptions.bytesMQTTEncoded
+        return self.subscriptions.bytesMQTT3Encoded
     }
 }
 
 extension MQTT3SubscribePacket.Subscription: MQTT3BytesRepresentable {
-    var bytesMQTTEncoded: [UInt8] {
-        var bytes: [UInt8] = self.topic.bytesMQTTEncoded
+    var bytesMQTT3Encoded: [UInt8] {
+        var bytes: [UInt8] = self.topic.bytesMQTT3Encoded
         bytes.append(self.qos.rawValue)
         return bytes
     }

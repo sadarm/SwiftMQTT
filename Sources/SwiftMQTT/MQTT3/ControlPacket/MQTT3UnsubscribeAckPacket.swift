@@ -17,7 +17,7 @@ struct MQTT3UnsubscribeAckPacket: MQTT3ControlPacket {
     }
     
     func variableHeader() -> [UInt8] {
-        self.identifier.bytesMQTTEncoded
+        self.identifier.bytesMQTT3Encoded
     }
     
     func payload() -> [UInt8] {

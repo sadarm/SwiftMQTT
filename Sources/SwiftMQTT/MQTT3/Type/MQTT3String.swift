@@ -10,8 +10,8 @@ import Foundation
 struct MQTT3String: ExpressibleByStringLiteral, MQTT3BytesRepresentable {
     typealias StringLiteralType = String
 
-    var bytesMQTTEncoded: [UInt8] {
-        return UInt16(self.rawString.utf8.count).bytesMQTTEncoded + self.rawString.utf8
+    var bytesMQTT3Encoded: [UInt8] {
+        return UInt16(self.rawString.utf8.count).bytesMQTT3Encoded + self.rawString.utf8
     }
     
     let rawString: String
