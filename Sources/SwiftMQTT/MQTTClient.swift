@@ -41,9 +41,12 @@ public final class MQTT3Connection: MQTTConnection {
     public var password: String? { self.parameters.password }
     public var cleanSession: Bool { self.parameters.cleanSession }
     public var keepAlive: UInt16 { self.parameters.keepAlive }
+    public var state: MQTTConnectionState { self.stateSubject.value }
     
     private let internalConnection: NWConnection
     private let connectionStateSubject: CurrentValueSubject<NWConnection.State, Never> = CurrentValueSubject(.setup)
+    
+    private let stateSubject: CurrentValueSubject<MQTTConnectionState, Never> = CurrentValueSubject(.setup)
     
     private let queue: DispatchQueue = DispatchQueue(label: "SwiftMQTT.NWConnection")
     

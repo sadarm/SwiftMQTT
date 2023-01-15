@@ -25,6 +25,7 @@ public protocol MQTTConnection {
     var password: String? { get }
     var cleanSession: Bool { get }
     var keepAlive: UInt16 { get }
+    var state: MQTTConnectionState { get }
     
     func start() async throws
     func stop()
