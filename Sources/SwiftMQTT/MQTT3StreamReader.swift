@@ -31,9 +31,7 @@ enum _MQTT3ControlPacket {
 
 final class MQTT3StreamReader {
     
-    var receivedControlPacketPublisher: AnyPublisher<_MQTT3ControlPacket, Never> {
-        self.receivedControlPacketSubject.eraseToAnyPublisher()
-    }
+    let receivedControlPacketPublisher: AnyPublisher<_MQTT3ControlPacket, Never>
     private let receivedControlPacketSubject: PassthroughSubject<_MQTT3ControlPacket, Never> = PassthroughSubject()
     
     private let connection: NWConnection
@@ -43,6 +41,7 @@ final class MQTT3StreamReader {
     
     init(_ connection: NWConnection) {
         self.connection = connection
+        self.receivedControlPacketPublisher = self.receivedControlPacketSubject.share().eraseToAnyPublisher()
     }
     
     func start() {
