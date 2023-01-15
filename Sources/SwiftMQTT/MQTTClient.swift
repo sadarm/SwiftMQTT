@@ -71,7 +71,6 @@ public final class MQTT3Connection: MQTTConnection {
                     case .setup, .preparing:
                         return Empty().eraseToAnyPublisher()
                     case .failed(let error):
-                        continuation.resume(throwing: error)
                         return Fail(error: error).eraseToAnyPublisher()
                     case .waiting(let error):
                         // 에러가 무엇이냐에 따라 기다리거나 취소하거나 동작을 취해야 한다.
