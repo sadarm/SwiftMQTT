@@ -49,9 +49,14 @@ public final class MQTT3Connection: MQTTConnection {
     private let stateSubject: CurrentValueSubject<MQTTConnectionState, Never> = CurrentValueSubject(.setup)
     
     private let queue: DispatchQueue = DispatchQueue(label: "SwiftMQTT.NWConnection")
+    private var keepAliveTimer: DispatchSourceTimer?
     
     private let streamReader: MQTT3StreamReader
     private var packetIdentifier: UInt16 = 0
+    
+    deinit {
+        self.stop()
+    }
     
     public init(using parameters: Parameters) {
         self.parameters = parameters
@@ -68,90 +73,37 @@ public final class MQTT3Connection: MQTTConnection {
     }
     
     public func start() async throws {
-        try await self.connect()
-        self.startReading()
-        try await self.handshake()
-    }
-    
-    private func connect() async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            self.connectionStateSubject
-                .flatMap { (state) -> AnyPublisher<Void, Error> in
-                    print("MQTT3Connection.state updated: \(state)")
-                    switch state {
-                    case .ready:
-                        return Just(()).setFailureType(to: Error.self).eraseToAnyPublisher()
-                    case .setup, .preparing:
-                        return Empty().eraseToAnyPublisher()
-                    case .failed(let error):
-                        return Fail(error: error).eraseToAnyPublisher()
-                    case .waiting(let error):
-                        // 에러가 무엇이냐에 따라 기다리거나 취소하거나 동작을 취해야 한다.
-                        return Empty().eraseToAnyPublisher()
-                    case .cancelled:
-                        return Fail(error: CancellationError()).eraseToAnyPublisher()
-                    @unknown default:
-                        return Fail(error: SwiftMQTTError.unknown).eraseToAnyPublisher()
-                    }
-                }.prefix(1)
-                .timeout(10.0, scheduler: self.queue, customError: { SwiftMQTTError.timeOut })
-                .sink(receiveCompletion: { (completion) in
-                    switch completion {
-                    case .finished:
-                        continuation.resume(returning: ())
-                    case .failure(let error):
-                        continuation.resume(throwing: error)
-                    }
-                }, receiveValue: {
-                    
-                }).store(in: &self.cancellables)
-            self.internalConnection.start(queue: self.queue)
+        guard case .setup = self.stateSubject.value else {
+            throw SwiftMQTTError.stateIsNotSetup
         }
         
-        self.connectionStateSubject.sink(receiveValue: { (state) in
-            switch state {
-            case .cancelled:
-                print("MQTT3Client cancelled")
-            case .failed(let error):
-                print("MQTT3Client failed. \(error)")
+        do {
+            self.stateSubject.send(.preparing)
+            try await self.connect()
+            self.startStreamReading()
+            try await self.handshake()
+            self.startKeepAlive()
+            self.stateSubject.send(.ready)
+        } catch {
+            self.internalConnection.cancel()
+            self.stopStreamReading()
+            self.stopKeepAlive()
+            
+            let mqttError: SwiftMQTTError
+            switch error {
+            case let error as SwiftMQTTError:
+                mqttError = error
             default:
-                break
+                mqttError = .any(error)
             }
-        }).store(in: &self.cancellables)
-    }
-    
-    private func handshake() async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            self.streamReader.receivedControlPacketPublisher
-                .prefix(1)
-                .sink(receiveValue: { (_packet) in
-                    guard case let .connack(packet) = _packet else {
-                        continuation.resume(throwing: SwiftMQTTError.unexpectedType)
-                        return
-                    }
-                    
-                    switch packet.returnCode {
-                    case .accepted:
-                        continuation.resume(returning: ())
-                    case .badUserNameOrPassword:
-                        continuation.resume(throwing: SwiftMQTTError.badUserNameOrPassword)
-                    case .identifierRejected:
-                        continuation.resume(throwing: SwiftMQTTError.identifierRejected)
-                    case .notAuthorized:
-                        continuation.resume(throwing: SwiftMQTTError.notAuthorized)
-                    case .reserved:
-                        continuation.resume(throwing: SwiftMQTTError.unexpectedType)
-                    case .serverUnavailable:
-                        continuation.resume(throwing: SwiftMQTTError.serverUnavailable)
-                    case .unacceptableProtocolVersion:
-                        continuation.resume(throwing: SwiftMQTTError.unacceptableProtocolVersion)
-                    }
-                }).store(in: &self.cancellables)
-            self.sendConnectPacket()
+            self.stateSubject.send(.failed(mqttError))
+            throw mqttError
         }
     }
     
     public func stop() {
+        self.stopKeepAlive()
+        self.stopStreamReading()
         self.internalConnection.cancel()
     }
     
@@ -187,8 +139,112 @@ public final class MQTT3Connection: MQTTConnection {
     }
 }
 
+// MARK: - Connection Start
 extension MQTT3Connection {
+    private func connect() async throws {
+        self.internalConnection.start(queue: self.queue)
+        try await self.waitForConnectionStateIsReady()
+        self.startToCheckConnectionState()
+    }
+    
+    private func waitForConnectionStateIsReady() async throws {
+        var cancellable: AnyCancellable?
+        try await withCheckedThrowingContinuation({ (continuation: CheckedContinuation<Void, Error>) in
+            cancellable = self.connectionStateSubject
+                .flatMap { (state) -> AnyPublisher<Void, Error> in
+                    print("MQTT3Connection.state updated: \(state)")
+                    switch state {
+                    case .ready:
+                        return Just(()).setFailureType(to: Error.self).eraseToAnyPublisher()
+                    case .setup, .preparing:
+                        return Empty().eraseToAnyPublisher()
+                    case .failed(let error):
+                        return Fail(error: error).eraseToAnyPublisher()
+                    case .waiting(let error):
+                        // 에러가 무엇이냐에 따라 기다리거나 취소하거나 동작을 취해야 한다.
+                        return Empty().eraseToAnyPublisher()
+                    case .cancelled:
+                        return Fail(error: SwiftMQTTError.cancelled).eraseToAnyPublisher()
+                    @unknown default:
+                        return Fail(error: SwiftMQTTError.unknown).eraseToAnyPublisher()
+                    }
+                }.prefix(1)
+                .timeout(10.0, scheduler: self.queue, customError: { SwiftMQTTError.timeOut })
+                .sink(receiveCompletion: { (completion) in
+                    switch completion {
+                    case .finished:
+                        continuation.resume(returning: ())
+                    case .failure(let error):
+                        switch error {
+                        case let error as NWError:
+                            continuation.resume(throwing: SwiftMQTTError.network(error))
+                        case let error as SwiftMQTTError:
+                            continuation.resume(throwing: error)
+                        default:
+                            continuation.resume(throwing: SwiftMQTTError.any(error))
+                        }
+                    }
+                }, receiveValue: { })
+        })
+        _ = cancellable
+    }
+    
+    private func startToCheckConnectionState() {
+        self.connectionStateSubject.sink(receiveValue: { [weak self] (state) in
+            guard let strongSelf = self else { return }
+            switch state {
+            case .cancelled:
+                strongSelf.stateSubject.send(.cancelled)
+                print("MQTT3Client cancelled")
+            case .failed(let error):
+                strongSelf.stateSubject.send(.failed(SwiftMQTTError.network(error)))
+                print("MQTT3Client failed. \(error)")
+            default:
+                break
+            }
+        }).store(in: &self.cancellables)
+    }
+    
+    private func handshake() async throws {
+        self.sendConnectPacket()
+        try await self.waitForConnectionAccepted()
+    }
+    
+    private func waitForConnectionAccepted() async throws {
+        var cancellable: AnyCancellable?
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            cancellable = self.streamReader.receivedControlPacketPublisher
+                .prefix(1)
+                .sink(receiveValue: { (_packet) in
+                    guard case let .connack(packet) = _packet else {
+                        continuation.resume(throwing: SwiftMQTTError.unexpectedType)
+                        return
+                    }
+                    
+                    switch packet.returnCode {
+                    case .accepted:
+                        continuation.resume(returning: ())
+                    case .badUserNameOrPassword:
+                        continuation.resume(throwing: SwiftMQTTError.badUserNameOrPassword)
+                    case .identifierRejected:
+                        continuation.resume(throwing: SwiftMQTTError.identifierRejected)
+                    case .notAuthorized:
+                        continuation.resume(throwing: SwiftMQTTError.notAuthorized)
+                    case .reserved:
+                        continuation.resume(throwing: SwiftMQTTError.unexpectedType)
+                    case .serverUnavailable:
+                        continuation.resume(throwing: SwiftMQTTError.serverUnavailable)
+                    case .unacceptableProtocolVersion:
+                        continuation.resume(throwing: SwiftMQTTError.unacceptableProtocolVersion)
+                    }
+                })
+        }
+        _ = cancellable
+    }
+}
 
+// MARK: - Packet
+extension MQTT3Connection {
     private func sendConnectPacket() {
         let connectPacket = MQTT3ConnectPacket(username: self.username.map { MQTT3String($0) },
                                                password: self.password.map { MQTT3String($0) },
@@ -204,29 +260,55 @@ extension MQTT3Connection {
         self.send(packet)
     }
     
-    private func sendPublishReceivedPacket(withPacketIdentifier identifier: UInt16) {
-        self.streamReader.receivedControlPacketPublisher
-            .compactMap {
-                if case let .pubrel(packet) = $0 {
-                    return packet
-                } else {
-                    return nil
-                }
-            }.prefix(1)
-            .sink(receiveValue: { [weak self] (packet: MQTT3PublishReleasePacket) in
-                self?.sendPublishCompletePacket(withPacketIdentifier: packet.identifier)
-            }).store(in: &self.cancellables)
-        self._sendPublishReceivedPacket(withPacketIdentifier: identifier)
+    private func performAcknowledgmentForQos2Publish(withPacketIdentifier identifier: UInt16) async throws {
+        self.sendPublishReceivedPacket(withPacketIdentifier: identifier)
+        try await self.waitForPublishReleasePacketReceived(withPacketIdentifier: identifier)
+        self.sendPublishCompletePacket(withPacketIdentifier: identifier)
     }
     
-    private func _sendPublishReceivedPacket(withPacketIdentifier identifier: UInt16) {
+    private func sendPublishReceivedPacket(withPacketIdentifier identifier: UInt16) {
         let packet = MQTT3PublishReceivedPacket(identifier: identifier)
         self.send(packet)
+    }
+    
+    private func waitForPublishReleasePacketReceived(withPacketIdentifier identifier: UInt16) async throws {
+        var cancellable: AnyCancellable?
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            cancellable = self.streamReader.receivedControlPacketPublisher
+                .filter {
+                    if case let .pubrel(packet) = $0,
+                       packet.identifier == identifier {
+                        return true
+                    } else {
+                        return false
+                    }
+                }.prefix(1)
+                .sink(receiveValue: { _ in
+                    
+                })
+        }
+        _ = cancellable
     }
     
     private func sendPublishCompletePacket(withPacketIdentifier identifier: UInt16) {
         let packet = MQTT3PublishCompletePacket(identifier: identifier)
         self.send(packet)
+    }
+    
+    private func sendPingRequestPacket() {
+        self.streamReader.receivedControlPacketPublisher
+            .compactMap {
+                if case let .pingresp(packet) = $0 {
+                    return packet
+                } else {
+                    return nil
+                }
+            }.prefix(1)
+            .sink(receiveValue: { (packet: MQTT3PingResponsePacket) in
+                print("received ping response")
+            }).store(in: &self.cancellables)
+        
+        self.send(MQTT3PingRequestPacket())
     }
     
     private func send(_ controlPacket: MQTT3ControlPacket) {
@@ -243,11 +325,11 @@ extension MQTT3Connection {
         }))
     }
     
-    private func startReading() {
+    private func startStreamReading() {
         self.streamReader.start()
     }
     
-    private func stopReading() {
+    private func stopStreamReading() {
         self.streamReader.cancel()
     }
     
@@ -262,7 +344,9 @@ extension MQTT3Connection {
                 case .qos1(let identifier):
                     strongSelf.sendPublishAckPacket(withPacketIdentifier: identifier)
                 case .qos2(let identifier):
-                    strongSelf.sendPublishReceivedPacket(withPacketIdentifier: identifier)
+                    Task {
+                        try await strongSelf.performAcknowledgmentForQos2Publish(withPacketIdentifier: identifier)
+                    }
                 }
             default:
                 break
