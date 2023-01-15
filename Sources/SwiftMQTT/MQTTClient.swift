@@ -91,6 +91,7 @@ public final class MQTT3Connection: MQTTConnection {
                         return Fail(error: SwiftMQTTError.unknown).eraseToAnyPublisher()
                     }
                 }.prefix(1)
+                .timeout(10.0, scheduler: self.queue, customError: { SwiftMQTTError.timeOut })
                 .sink(receiveCompletion: { (completion) in
                     switch completion {
                     case .finished:
