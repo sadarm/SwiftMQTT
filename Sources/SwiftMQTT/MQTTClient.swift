@@ -268,3 +268,32 @@ extension MQTT3Connection {
     }
 
 }
+
+// MARK: - KeepAlive
+extension MQTT3Connection {
+    private func startKeepAlive() {
+        let interval: Int = self.parameters.keepAlive > 0 ? Int(self.parameters.keepAlive) : 60
+        let timer = DispatchSource.makeTimerSource(flags: [], queue: self.queue)
+        timer.schedule(deadline: .now() + .seconds(interval), repeating: .seconds(interval))
+        timer.setEventHandler(handler: { [weak self] in
+            guard let strongSelf = self else { return }
+            guard strongSelf.connectionStateSubject.value == .ready else {
+                return
+            }
+            
+            strongSelf.sendPingRequestPacket()
+        })
+        timer.resume()
+        self.keepAliveTimer = timer
+    }
+    
+    private func stopKeepAlive() {
+        guard let timer = self.keepAliveTimer else {
+            return
+        }
+        self.keepAliveTimer = nil
+        
+        timer.setEventHandler(handler: { })
+        timer.cancel()
+    }
+}
