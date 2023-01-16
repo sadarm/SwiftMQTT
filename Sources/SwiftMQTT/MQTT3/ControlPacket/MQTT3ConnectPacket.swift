@@ -23,15 +23,15 @@ struct MQTT3ConnectPacket {
         static let userName = Self(rawValue: 7)
     }
     
-    var protocolSignature: MQTT3String { "MQTT" }
+    var protocolSignature: MQTTString { "MQTT" }
     var protocolLevel: UInt8 { 4 }
     
-    var username: MQTT3String?
-    var password: MQTT3String?
+    var username: MQTTString?
+    var password: MQTTString?
     var willMessage: MQTT3Message?
     var cleanSession: Bool = true
     
-    var clientID: MQTT3String
+    var clientID: MQTTString
     var keepAlive: UInt16
 }
 

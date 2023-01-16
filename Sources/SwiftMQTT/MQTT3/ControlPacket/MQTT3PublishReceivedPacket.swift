@@ -18,7 +18,7 @@ struct MQTT3PublishReceivedPacket: MQTT3ControlPacket {
     }
     
     func variableHeader() -> [UInt8] {
-        self.identifier.bytesMQTT3Encoded
+        self.identifier.bytesMQTTEncoded
     }
     
     func payload() -> [UInt8] {

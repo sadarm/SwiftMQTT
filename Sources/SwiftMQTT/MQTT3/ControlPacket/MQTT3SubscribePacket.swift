@@ -9,10 +9,10 @@ import Foundation
 
 struct MQTT3SubscribePacket: MQTT3ControlPacket {
     struct Subscription {
-        let topic: MQTT3String
+        let topic: MQTTString
         let qos: MQTT3QoS
 
-        init(topic: MQTT3String, qos: MQTT3QoS) {
+        init(topic: MQTTString, qos: MQTT3QoS) {
             self.topic = topic
             self.qos = qos
         }
@@ -29,17 +29,17 @@ struct MQTT3SubscribePacket: MQTT3ControlPacket {
     }
     
     func variableHeader() -> [UInt8] {
-        self.identifier.bytesMQTT3Encoded
+        self.identifier.bytesMQTTEncoded
     }
     
     func payload() -> [UInt8] {
-        return self.subscriptions.bytesMQTT3Encoded
+        return self.subscriptions.bytesMQTTEncoded
     }
 }
 
-extension MQTT3SubscribePacket.Subscription: MQTT3BytesRepresentable {
-    var bytesMQTT3Encoded: [UInt8] {
-        var bytes: [UInt8] = self.topic.bytesMQTT3Encoded
+extension MQTT3SubscribePacket.Subscription: MQTTBytesRepresentable {
+    var bytesMQTTEncoded: [UInt8] {
+        var bytes: [UInt8] = self.topic.bytesMQTTEncoded
         bytes.append(self.qos.rawValue)
         return bytes
     }
@@ -66,7 +66,7 @@ extension MQTT3SubscribePacket {
                 throw SwiftMQTTError.corruptData
             }
             
-            let topic = try MQTT3String(data)
+            let topic = try MQTTString(data)
             data = data[lengthOfTopic..<data.endIndex]
             
             guard let qos = data.first.flatMap({ MQTT3QoS(rawValue: $0) }) else {

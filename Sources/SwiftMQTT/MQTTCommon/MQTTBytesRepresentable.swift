@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol MQTT3BytesRepresentable {
-    var bytesMQTT3Encoded: [UInt8] { get }
+protocol MQTTBytesRepresentable {
+    var bytesMQTTEncoded: [UInt8] { get }
 }

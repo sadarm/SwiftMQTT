@@ -9,13 +9,13 @@ import Foundation
 
 struct MQTT3Message {
     let qos: MQTT3QoS
-    let topic: MQTT3String
-    let payload: MQTT3String
+    let topic: MQTTString
+    let payload: MQTTString
     let retain: Bool
 }
 
-extension MQTT3Message: MQTT3BytesRepresentable {
-    var bytesMQTT3Encoded: [UInt8] {
+extension MQTT3Message: MQTTBytesRepresentable {
+    var bytesMQTTEncoded: [UInt8] {
         var bytes: [UInt8] = []
         bytes.append(self.topic)
         bytes.append(self.payload)

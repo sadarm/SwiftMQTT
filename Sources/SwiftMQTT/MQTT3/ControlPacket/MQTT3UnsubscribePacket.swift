@@ -9,21 +9,21 @@ import Foundation
 
 struct MQTT3UnsubscribePacket: MQTT3ControlPacket {
     var typeAndFlags: MQTT3ControlPacketTypeAndFlags { MQTT3ControlPacketTypeAndFlags(type: .unsubscribe, flags: 0) }
-    let topics: [MQTT3String]
+    let topics: [MQTTString]
     
     let identifier: UInt16
     
-    init(identifier: UInt16, topics: [MQTT3String]) {
+    init(identifier: UInt16, topics: [MQTTString]) {
         self.identifier = identifier
         self.topics = topics
     }
     
     func variableHeader() -> [UInt8] {
-        self.identifier.bytesMQTT3Encoded
+        self.identifier.bytesMQTTEncoded
     }
     
     func payload() -> [UInt8] {
-        self.topics.bytesMQTT3Encoded
+        self.topics.bytesMQTTEncoded
     }
 }
 
@@ -37,7 +37,7 @@ extension MQTT3UnsubscribePacket {
         let identifier = UInt16(data[data.startIndex] << 8) | UInt16(data[data.startIndex+1])
         data = data[data.startIndex+2..<data.endIndex]
         
-        var topics: [MQTT3String] = []
+        var topics: [MQTTString] = []
         while !data.isEmpty {
             guard data.count >= 2 else {
                 throw SwiftMQTTError.corruptData
@@ -48,7 +48,7 @@ extension MQTT3UnsubscribePacket {
                 throw SwiftMQTTError.corruptData
             }
             
-            let topic = try MQTT3String(data)
+            let topic = try MQTTString(data)
             topics.append(topic)
         }
         self.init(identifier: identifier, topics: topics)

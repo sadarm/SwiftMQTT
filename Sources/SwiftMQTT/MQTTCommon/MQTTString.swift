@@ -2,16 +2,16 @@
 //  File.swift
 //  
 //
-//  Created by kisu park on 2023/01/12.
+//  Created by kisu park on 2023/01/15.
 //
 
 import Foundation
 
-struct MQTT3String: ExpressibleByStringLiteral, MQTT3BytesRepresentable {
+struct MQTTString: ExpressibleByStringLiteral, MQTTBytesRepresentable {
     typealias StringLiteralType = String
 
-    var bytesMQTT3Encoded: [UInt8] {
-        return UInt16(self.rawString.utf8.count).bytesMQTT3Encoded + self.rawString.utf8
+    var bytesMQTTEncoded: [UInt8] {
+        return UInt16(self.rawString.utf8.count).bytesMQTTEncoded + self.rawString.utf8
     }
     
     let rawString: String

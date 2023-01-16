@@ -124,13 +124,13 @@ public final class MQTT3Connection: MQTTConnection {
                 }).store(in: &self.cancellables)
             
             self.send(MQTT3SubscribePacket(identifier: packetIdentifier,
-                                           subscriptions: topics.map { MQTT3SubscribePacket.Subscription(topic: MQTT3String($0.0), qos: $0.1) }))
+                                           subscriptions: topics.map { MQTT3SubscribePacket.Subscription(topic: MQTTString($0.0), qos: $0.1) }))
         })
     }
     
     public func unsubscribeTopics(_ topics: [String]) {
         self.send(MQTT3UnsubscribePacket(identifier: self.nextPacketIdentifier(),
-                                         topics: topics.map { MQTT3String($0) }))
+                                         topics: topics.map { MQTTString($0) }))
     }
     
     private func nextPacketIdentifier() -> UInt16 {
@@ -246,11 +246,11 @@ extension MQTT3Connection {
 // MARK: - Packet
 extension MQTT3Connection {
     private func sendConnectPacket() {
-        let connectPacket = MQTT3ConnectPacket(username: self.username.map { MQTT3String($0) },
-                                               password: self.password.map { MQTT3String($0) },
+        let connectPacket = MQTT3ConnectPacket(username: self.username.map { MQTTString($0) },
+                                               password: self.password.map { MQTTString($0) },
                                                willMessage: nil,
                                                cleanSession: self.cleanSession,
-                                               clientID: MQTT3String(self.clientID),
+                                               clientID: MQTTString(self.clientID),
                                                keepAlive: self.keepAlive)
         self.send(connectPacket)
     }

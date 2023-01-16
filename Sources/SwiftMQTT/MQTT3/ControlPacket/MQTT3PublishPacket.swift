@@ -47,8 +47,8 @@ struct MQTT3PublishPacket: MQTT3ControlPacket {
 
     var dupFlag: Bool
     let qosWithIdentifier: QoSWithIdentifier
-    let topic: MQTT3String
-    let message: MQTT3String
+    let topic: MQTTString
+    let message: MQTTString
     let retain: Bool
     
     func variableHeader() -> [UInt8] {
@@ -98,7 +98,7 @@ extension MQTT3PublishPacket {
             throw SwiftMQTTError.notEnoughData
         }
         
-        let topic = try MQTT3String(data[data.startIndex..<data.startIndex+lengthOfTopic])
+        let topic = try MQTTString(data[data.startIndex..<data.startIndex+lengthOfTopic])
         data = data[data.startIndex+lengthOfTopic..<data.endIndex]
         
         guard data.count >= 2 else {
@@ -119,7 +119,7 @@ extension MQTT3PublishPacket {
             qosWithIdentifier = .qos2(identifier)
         }
         
-        let message = try MQTT3String(data)
+        let message = try MQTTString(data)
         
         self.init(dupFlag: flags.dupFlag,
                   qosWithIdentifier: qosWithIdentifier,
