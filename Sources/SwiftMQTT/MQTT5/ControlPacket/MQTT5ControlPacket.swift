@@ -14,14 +14,13 @@ protocol MQTT5ControlPacket {
     func fixedHeader() -> Data
     func variableHeader() -> Data
     func payload() -> Data
-    func properties() -> Data
 }
 
 extension MQTT5ControlPacket {
     var type: MQTT5.ControlPacketType { self.typeAndFlags.type }
     
     var remainingLength: UInt32 {
-        return UInt32(self.variableHeader().count + self.payload().count + self.properties().count)
+        return UInt32(self.variableHeader().count + self.payload().count)
     }
     
     func fixedHeader() -> Data {
@@ -34,9 +33,7 @@ extension MQTT5ControlPacket {
 }
 
 
-
-
-enum MQTT5 {
+public enum MQTT5 {
     
 }
 
@@ -60,80 +57,34 @@ extension MQTT5 {
         case auth = 0xf0
     }
     
-    enum Property {
-        case payloadFormatIndicator(UInt8)
-        case messageExpiryInterval(UInt32)
-        case contentType(MQTTString)
-        case responseTopic(MQTTString)
-        case correlationData(UInt8)
-        case subscriptionIdentifier(UInt32)
-        case sessionExpiryInterval(UInt32)
-        case assignedClientIdentifier(MQTTString)
-        case serverKeepAlive(UInt16)
-        case authenticationMethod(MQTTString)
-        case authenticationData(Data)
-        case requestProblemInformation(UInt8)
-        case willDelayInterval(UInt32)
-        case requestResponseInformation(MQTTString)
-        case responseInformation(MQTTString)
-        case serverReference(MQTTString)
-        case responString(MQTTString)
-        case receiveMaximum(UInt16)
-        case topicAliasMaximum(UInt16)
-        case topicAlias(UInt16)
-        case maximumQoS(UInt8)
-        case retainAvailable(UInt8)
-        case userProperty((MQTTString, MQTTString))
-        case maximumPacketSize(UInt32)
-        case wildcardSubscriptionAvailable(UInt8)
-        case subscriptionIdentifierAvailable(UInt8)
-        case sharedSubscriptionAvailable(UInt8)
-    }
-    
-    enum ReasonCode: UInt8 {
-        case success = 0x00
-        case grantedQoS1 = 0x01
-        case grantedQoS2 = 0x02
-        case disconnectWithWillMessage = 0x04
-        case noMatchingSubscribers = 0x10
-        case noSubscriptionExisted = 0x11
-        case continueAuthentication = 0x18
-        case reauthenticate = 0x19
-        case unspecifiedError = 0x80
-        case malformedPacket = 0x81
-        case protocolError = 0x82
-        case implementationSpecificError = 0x83
-        case unsupportedProtocolVersion = 0x84
-        case clientIdentifierNotValid = 0x85
-        case badUserNameOrPassword = 0x86
-        case notAuthorized = 0x87
-        case serverUnavaiable = 0x88
-        case serverBusy = 0x89
-        case banned = 0x8A
-        case serverShuttingDown = 0x8B
-        case badAuthenticationMethod = 0x8C
-        case keepAliveTimeout = 0x8D
-        case sessionTakenOver = 0x8E
-        case topicFilterInvalid = 0x8F
-        case topicNameInvalid = 0x90
-        case packetIdentifierInUse = 0x91
-        case packetIdentifierNotFound = 0x92
-        case receiveMaximumExceeded = 0x93
-        case topicAliasInvalid = 0x94
-        case packetTooLarge = 0x95
-        case messageRateTooHigh = 0x96
-        case quotaExceeded = 0x97
-        case administrativeAction = 0x98
-        case payloadFormatInvalid = 0x99
-        case retainNotSUpported = 0x9A
-        case qosNotSupported = 0x9B
-        case useAnotherServer = 0x9C
-        case serverMoved = 0x9D
-        case sharedSubscriptionsNotSupported = 0x9E
-        case connectionRateExceeded = 0x9F
-        case maximumConnectTime = 0xA0
-        case subscriptionIdentifiersNotSupported = 0xA1
-        case wildcardSubscriptionsNotSupported = 0xA2
+    public enum PropertyIdentifier: UInt8 {
+        case payloadFormatIndicator = 0x01
+        case messageExpiryInterval = 0x02
+        case contentType = 0x03
+        case responseTopic = 0x08
+        case correlationData = 0x09
+        case subscriptionIdentifier = 0x0B
+        case sessionExpiryInterval = 0x11
+        case assignedClientIdentifier = 0x12
+        case serverKeepAlive = 0x13
+        case authenticationMethod = 0x15
+        case authenticationData = 0x16
+        case requestProblemInformation = 0x17
+        case willDelayInterval = 0x18
+        case requestResponseInformation = 0x19
+        case responseInformation = 0x1A
+        case serverReference = 0x1C
+        case reasonString = 0x1F
+        case receiveMaximum = 0x21
+        case topicAliasMaximum = 0x22
+        case topicAlias = 0x23
+        case maximumQoS = 0x24
+        case retainAvailable = 0x25
+        case userProperty = 0x26
+        case maximumPacketSize = 0x27
+        case wildcardSubscriptionAvailable = 0x28
+        case subscriptionIdentifiersAvailable = 0x29
+        case sharedSubscriptionAvailable = 0x2A
     }
 }
 

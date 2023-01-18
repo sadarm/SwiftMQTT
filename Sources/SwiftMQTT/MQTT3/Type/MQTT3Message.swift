@@ -8,7 +8,7 @@
 import Foundation
 
 struct MQTT3Message {
-    let qos: MQTT3QoS
+    let qos: MQTTQoS
     let topic: MQTTString
     let payload: MQTTString
     let retain: Bool

@@ -7,27 +7,29 @@
 
 import Foundation
 
-struct MQTT3UnsubscribePacket: MQTT3ControlPacket {
-    var typeAndFlags: MQTT3ControlPacketTypeAndFlags { MQTT3ControlPacketTypeAndFlags(type: .unsubscribe, flags: 0) }
-    let topics: [MQTTString]
-    
-    let identifier: UInt16
-    
-    init(identifier: UInt16, topics: [MQTTString]) {
-        self.identifier = identifier
-        self.topics = topics
-    }
-    
-    func variableHeader() -> [UInt8] {
-        self.identifier.bytesMQTTEncoded
-    }
-    
-    func payload() -> [UInt8] {
-        self.topics.bytesMQTTEncoded
+extension MQTT3 {
+    struct UnsubscribePacket: MQTT3ControlPacket {
+        var typeAndFlags: ControlPacketTypeAndFlags { ControlPacketTypeAndFlags(type: .unsubscribe, flags: 0) }
+        let topics: [MQTTString]
+        
+        let identifier: UInt16
+        
+        init(identifier: UInt16, topics: [MQTTString]) {
+            self.identifier = identifier
+            self.topics = topics
+        }
+        
+        func variableHeader() -> [UInt8] {
+            self.identifier.bytesMQTTEncoded
+        }
+        
+        func payload() -> [UInt8] {
+            self.topics.bytesMQTTEncoded
+        }
     }
 }
 
-extension MQTT3UnsubscribePacket {
+extension MQTT3.UnsubscribePacket {
     init(_ data: Data) throws {
         guard data.count >= 2 else {
             throw SwiftMQTTError.notEnoughData

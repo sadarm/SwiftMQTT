@@ -7,18 +7,20 @@
 
 import Foundation
 
-struct MQTT3PingRequestPacket: MQTT3ControlPacket {
-    var typeAndFlags: MQTT3ControlPacketTypeAndFlags { MQTT3ControlPacketTypeAndFlags(type: .pingreq, flags: 0) }
-    
-    init() {
+extension MQTT3 {
+    struct PingRequestPacket: MQTT3ControlPacket {
+        var typeAndFlags: ControlPacketTypeAndFlags { ControlPacketTypeAndFlags(type: .pingreq, flags: 0) }
         
-    }
-    
-    func variableHeader() -> [UInt8] {
-        []
-    }
-    
-    func payload() -> [UInt8] {
-        []
+        init() {
+            
+        }
+        
+        func variableHeader() -> [UInt8] {
+            []
+        }
+        
+        func payload() -> [UInt8] {
+            []
+        }
     }
 }

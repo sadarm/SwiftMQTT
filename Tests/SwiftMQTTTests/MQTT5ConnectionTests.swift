@@ -1,14 +1,11 @@
 import XCTest
 @testable import SwiftMQTT
 
-final class SwiftMQTTTests: XCTestCase {
+final class MQTT5ConnectionTests: XCTestCase {
     func testExample() async throws {
-        let parameters = MQTT3Connection.Parameters(host: "localhost",
-                                                    port: 1883,
-                                                    clientID: "UnitTest",
-                                                    cleanSession: false,
-                                                    keepAlive: 5)
-        let connection = MQTT3Connection(using: parameters)
+        let parameters = MQTTConnectionParameters(clientID: "UnitTest", mqttProtocol: .v5(.init(connectProperties: MQTT5.ConnectProperties.init(userProperty: []))))
+        
+        let connection = MQTTConnection(host: "localhost", port: 1883, using: parameters)
         try await connection.start()
         try await connection.subscribeTopics([("/stat", .qos2)])
         

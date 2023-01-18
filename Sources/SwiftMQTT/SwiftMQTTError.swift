@@ -23,6 +23,8 @@ public enum SwiftMQTTError: Error {
     case serverUnavailable
     case badUserNameOrPassword
     case notAuthorized
+    case malformedVariableByteInteger
+    case malformedBool
     case network(NWError)
     case any(Error)
 }

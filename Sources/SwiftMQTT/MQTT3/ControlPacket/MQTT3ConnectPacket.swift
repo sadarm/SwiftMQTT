@@ -7,37 +7,40 @@
 
 import Foundation
 
-struct MQTT3ConnectPacket {
-    struct Flags: OptionSet {
-        typealias RawValue = UInt8
-        var rawValue: RawValue
-        
-        static let reserved = Self(rawValue: 0)
-        static let cleanSession = Self(rawValue: 1 << 1)
-        static let willFlag = Self(rawValue: 1 << 2)
-        static func willQos(_ qos: MQTT3QoS) -> Self {
-            Self(rawValue: qos.rawValue << 4 | qos.rawValue << 3)
+extension MQTT3 {
+    struct ConnectPacket {
+        struct Flags: OptionSet {
+            typealias RawValue = UInt8
+            var rawValue: RawValue
+            
+            static let reserved = Self(rawValue: 0)
+            static let cleanSession = Self(rawValue: 1 << 1)
+            static let willFlag = Self(rawValue: 1 << 2)
+            static func willQos(_ qos: MQTTQoS) -> Self {
+                Self(rawValue: qos.rawValue << 4 | qos.rawValue << 3)
+            }
+            static let willRetain = Self(rawValue: 5)
+            static let password = Self(rawValue: 6)
+            static let userName = Self(rawValue: 7)
         }
-        static let willRetain = Self(rawValue: 5)
-        static let password = Self(rawValue: 6)
-        static let userName = Self(rawValue: 7)
+        
+        var protocolSignature: MQTTString { "MQTT" }
+        var protocolLevel: UInt8 { 4 }
+        
+        var username: MQTTString?
+        var password: MQTTString?
+        var willMessage: MQTT3Message?
+        var cleanSession: Bool = true
+        
+        var clientID: MQTTString
+        var keepAlive: UInt16
     }
-    
-    var protocolSignature: MQTTString { "MQTT" }
-    var protocolLevel: UInt8 { 4 }
-    
-    var username: MQTTString?
-    var password: MQTTString?
-    var willMessage: MQTT3Message?
-    var cleanSession: Bool = true
-    
-    var clientID: MQTTString
-    var keepAlive: UInt16
 }
 
-extension MQTT3ConnectPacket: MQTT3ControlPacket { 
-    var typeAndFlags: MQTT3ControlPacketTypeAndFlags {
-        MQTT3ControlPacketTypeAndFlags(type: .connect, flags: 0)
+
+extension MQTT3.ConnectPacket: MQTT3ControlPacket {
+    var typeAndFlags: MQTT3.ControlPacketTypeAndFlags {
+        MQTT3.ControlPacketTypeAndFlags(type: .connect, flags: 0)
     }
 
     func variableHeader() -> [UInt8] {
